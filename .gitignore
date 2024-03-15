@@ -1,0 +1,25 @@
+# .gitignore for Python projects
+
+# Compiled Python files
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual environment
+venv/
+env/
+*.env
+
+# Local development settings
+*.sqlite3
+*.db
+
+# Logs and temporary files
+*.log
+*.swp
+*.swo
+*.tmp
+
+# Ignore the contents of the 'RMG' folder
+/RMG/*
+

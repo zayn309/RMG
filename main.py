@@ -1,45 +1,42 @@
-from utils import get_random_film,open_url_in_browser
+from utils import get_random_film,open_url_in_browser,load_svg
 import pygame, sys
 import pygame_gui
-import cairosvg
-import io
 import threading
-import warnings
 
-# warnings.filterwarnings("ignore")
-
-def load_svg(filename):
-    new_bites = cairosvg.svg2png(url = filename)
-    byte_io = io.BytesIO(new_bites)
-    return pygame.image.load(byte_io)
-
+pygame.init()
+pygame.font.init()
+pygame.display.set_caption("RMG")
+pygame.display.set_icon(pygame.image.load('assets\letterboxd-mac-icon.png'))
 
 COLOR_INACTIVE = pygame.Color("lightskyblue3")
 COLOR_ACTIVE = pygame.Color("dodgerblue2")
-pygame.init()
+backGroundCol = "#14181c"
+desc_color = "#99aabb"
+
 SCREEN_WIDTH = 600
-SCREEN_HIGHT = 800
+SCREEN_HIGHT = 900
+
 BUTTON_WIDTH = 150
 BUTTON_HIGHT = 40
 
-backGroundCol = "#14181c"
-screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HIGHT))
-pygame.display.set_caption("RMG")
 gui_font = pygame.font.Font(None, 30)
 textSur_font = pygame.font.SysFont(None, 28,)
-filmName_font = pygame.font.Font("themes/TiemposHeadline-Black.ttf", 35)
+filmName_font = pygame.font.Font("assets/TiemposHeadline-Black.ttf", 35)
 smallFont = pygame.font.SysFont(None,22,)
 imdb_font = pygame.font.SysFont("ArTarumianMHarvats",25,)
 rating_font = pygame.font.SysFont(None,27,)
 desc_font = pygame.font.SysFont("Arial",20,)
-film_info = None
+
 
 imdb_logo = imdb_font.render("IMDb",True,"#000000")
-yts_logo = load_svg('themes/Logo-YTS.svg')
+yts_logo = load_svg('assets/Logo-YTS.svg')
 yts_logo = pygame.transform.scale(yts_logo,(52,26))
-star = pygame.image.load('themes/star.png')
+star = pygame.image.load('assets/star.png')
 star = pygame.transform.scale(star,(28,28)) 
 
+screen = pygame.display.set_mode((SCREEN_WIDTH,SCREEN_HIGHT))
+
+film_info = None
 
 class Button:
     def __init__(self, text, width, height, pos, elevation):
@@ -135,10 +132,12 @@ def draw_logos(x, y):
     rect.y = rect.y + 2
 
     # yts logo 
+    
     yts_rect = yts_logo.get_rect()
     yts_rect.x = imdb_bg.x + imdb_bg.width + 8
     yts_rect.y = imdb_bg.y
-
+    yts_bg = pygame.rect.Rect(yts_rect.x, yts_rect.y, yts_rect.width, yts_rect.height)
+    pygame.draw.rect(screen,backGroundCol,yts_bg)
 
     global prev_mouse_pressed
     if pygame.mouse.get_pressed()[0] and rect.collidepoint(pygame.mouse.get_pos()) and not prev_mouse_pressed:
@@ -163,31 +162,25 @@ def display_text_animation(string,x,y):
         if string[i] == ' ' and next_width == 0:
             pass
         try:
-
             if string[i] == ' ' and i < len(string):
-                next_width = textSur_font.render(text + string[i + 1:string.find(" ", i + 1) if string.find(" ", i + 1) != -1 else len(string)], True, "#FFFFFF").get_width()
+                next_width = textSur_font.render(text + string[i + 1:string.find(" ", i + 1) if string.find(" ", i + 1) != -1 else len(string)] + 'DU', True, "#FFFFFF").get_width()
             
         except:
             pass
 
-        if (next_width >= SCREEN_WIDTH +100 ):
+        if (next_width > SCREEN_WIDTH +100 ):
             text += "\n"
             next_width = 0
-        if text[-1] == "\n":
-            next_width = 0
-        text_surface = desc_font.render(text, True, "#FFFFFF", backGroundCol)
+        text_surface = desc_font.render(text, True, desc_color, backGroundCol)
         text_rect = text_surface.get_rect()
         text_rect.x = x
         text_rect.y = y
         screen.blit(text_surface, text_rect)
         
         pygame.display.update()
-        pygame.time.wait(40)
+        pygame.time.wait(5)
 
 def draw_info(py_image,x,y):
-    #draw poster
-    # raw_str = poster.tobytes("raw", poster.mode)
-    # py_image = pygame.image.fromstring(raw_str, poster.size, poster.mode)
     border = pygame.rect.Rect(0,0,py_image.get_width() + 10,py_image.get_height() + 10)
     rect = py_image.get_rect() 
     rect.x = x

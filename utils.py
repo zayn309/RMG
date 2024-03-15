@@ -9,6 +9,9 @@ import aiohttp
 import time
 from Film import Film
 import secrets
+import cairosvg
+import io
+import pygame
 
 def get_Films_list(username=None, listName="/watchlist/"):
     try:
@@ -109,6 +112,18 @@ def get_random_film(username):
     list_ = asyncio.run(get_Films_list_async(username=username))
     rand_film = secrets.choice(list(list_))
     return rand_film
+
+def url_exists(url):
+    try:
+        response = requests.head(url)
+        return response.status_code == 200
+    except requests.RequestException:
+        return False
+
+def load_svg(filename):
+    new_bites = cairosvg.svg2png(url = filename)
+    byte_io = io.BytesIO(new_bites)
+    return pygame.image.load(byte_io)
 
 if __name__ == "__main__":
     start_time_async = time.time()

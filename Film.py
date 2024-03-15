@@ -1,5 +1,6 @@
-from bs4 import BeautifulSoup
+
 from utils import main_domain
+from bs4 import BeautifulSoup
 import json
 import io
 import pygame
@@ -110,6 +111,9 @@ class Film:
             "yts_link": self.get_ytsLink(),
             'description': self.get_desc(),
         }
+        from utils import url_exists
+        if not url_exists(self.movie_info['yts_link']):
+            self.movie_info['yts_link'] = self.movie_info['yts_link'].rsplit('-', 1)[0]
 
     def get_info(self):
         asyncio.run(self.save_movie_info_async())
