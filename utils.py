@@ -1,6 +1,7 @@
 
 main_domain = "https://letterboxd.com/"
 
+import threading
 import requests
 from bs4 import BeautifulSoup
 import webbrowser
@@ -124,6 +125,14 @@ def load_svg(filename):
     new_bites = cairosvg.svg2png(url = filename)
     byte_io = io.BytesIO(new_bites)
     return pygame.image.load(byte_io)
+
+
+
+def kill_thread(thread_name):
+    for thread in threading.enumerate():
+        if thread.name == thread_name:
+            thread.join()
+            break
 
 if __name__ == "__main__":
     start_time_async = time.time()

@@ -1,5 +1,6 @@
-from utils import get_random_film,open_url_in_browser,load_svg
-import pygame, sys
+from utils import get_random_film,open_url_in_browser,load_svg,kill_thread
+import pygame 
+import sys
 import pygame_gui
 import threading
 
@@ -12,6 +13,8 @@ COLOR_INACTIVE = pygame.Color("lightskyblue3")
 COLOR_ACTIVE = pygame.Color("dodgerblue2")
 backGroundCol = "#14181c"
 desc_color = "#99aabb"
+WHITE = '#FFFFFF'
+BLACK = '#000000'
 
 SCREEN_WIDTH = 600
 SCREEN_HIGHT = 900
@@ -19,7 +22,7 @@ SCREEN_HIGHT = 900
 BUTTON_WIDTH = 150
 BUTTON_HIGHT = 40
 
-gui_font = pygame.font.Font(None, 30)
+button_font = pygame.font.Font(None, 30)
 textSur_font = pygame.font.SysFont(None, 28,)
 filmName_font = pygame.font.Font("assets/TiemposHeadline-Black.ttf", 35)
 smallFont = pygame.font.SysFont(None,22,)
@@ -28,7 +31,7 @@ rating_font = pygame.font.SysFont(None,27,)
 desc_font = pygame.font.SysFont("Arial",20,)
 
 
-imdb_logo = imdb_font.render("IMDb",True,"#000000")
+imdb_logo = imdb_font.render("IMDb",True,BLACK)
 yts_logo = load_svg('assets/Logo-YTS.svg')
 yts_logo = pygame.transform.scale(yts_logo,(52,26))
 star = pygame.image.load('assets/star.png')
@@ -54,7 +57,7 @@ class Button:
         self.bottom_rect = pygame.Rect(pos, (width, height))
         self.bottom_color = "#326a83"
         # text
-        self.text_surf = gui_font.render(text, True, "#FFFFFF")
+        self.text_surf = button_font.render(text, True, WHITE)
         self.text_rect = self.text_surf.get_rect(center=self.top_rect.center)
 
     def draw(self):
@@ -86,7 +89,7 @@ class Button:
             self.top_color = "#0d3249"
         return self.pressed
 
-def draw_text(text, text_col, x, y,border_col,font,bg_co,init_x,init_y,draw_border = False):
+def draw_meta_Data(text, text_col, x, y,border_col,font,bg_co,init_x,init_y,draw_border = False):
     img = font.render(text, True, text_col)
     rect_out = None
     new_x = None
@@ -115,7 +118,7 @@ def draw_text(text, text_col, x, y,border_col,font,bg_co,init_x,init_y,draw_bord
     return new_x, new_y
 
 def draw_movie_name(name,y):
-    name = filmName_font.render(name + ' (' + film_info['release_year'] + ')',True, "#FFFFFF",backGroundCol)
+    name = filmName_font.render(name + ' (' + film_info['release_year'] + ')',True, WHITE,backGroundCol)
     if name.get_width() > SCREEN_WIDTH - 40:
         name = pygame.transform.scale_by(name,(SCREEN_WIDTH- 40) / name.get_width() * 1.0)
     name_rect = name.get_rect(center = (SCREEN_WIDTH //2,y ))
@@ -163,7 +166,7 @@ def display_text_animation(string,x,y):
             pass
         try:
             if string[i] == ' ' and i < len(string):
-                next_width = textSur_font.render(text + string[i + 1:string.find(" ", i + 1) if string.find(" ", i + 1) != -1 else len(string)] + 'DU', True, "#FFFFFF").get_width()
+                next_width = textSur_font.render(text + string[i + 1:string.find(" ", i + 1) if string.find(" ", i + 1) != -1 else len(string)] + 'D', True, WHITE).get_width()
             
         except:
             pass
@@ -180,68 +183,51 @@ def display_text_animation(string,x,y):
         pygame.display.update()
         pygame.time.wait(5)
 
-def draw_info(py_image,x,y):
-    border = pygame.rect.Rect(0,0,py_image.get_width() + 10,py_image.get_height() + 10)
-    rect = py_image.get_rect() 
-    rect.x = x
-    rect.y = y
+
+def draw_info(poster, x, y):
+    # draw poster
+    border_width = poster.get_width() + 10
+    border_height = poster.get_height() + 10
+    border = pygame.rect.Rect(0, 0, border_width, border_height)
+    rect = poster.get_rect(x=x, y=y)
     border.center = rect.center
-    pygame.draw.rect(screen,"#000000",border,border_radius=3)
-    screen.blit(py_image,rect)
-    
+    pygame.draw.rect(screen, BLACK, border, border_radius=3)
+    screen.blit(poster, rect)
+
     draw_logos(border.x + 3 , border.y + border.height + 7)
 
-    current_y = border.y + 4 
-    current_x = border.x + border.width + 7
-    draw_text("Director","#FFFFFF",current_x ,current_y,"#FFFFFF",textSur_font,backGroundCol,0,0)
-    temp_x = current_x + 1
-    temp_y = current_y
-    for director in film_info['director']:
-        temp_x, temp_y = draw_text(director,"#FFFFFF",temp_x,temp_y + 34,'#000000',smallFont,True,current_x +1,current_y,"#000000")
-        current_y = temp_y
+    # Function to draw metadata
+    def draw_metadata(title, data_list, x, y):
+        draw_meta_Data(title, WHITE, x, y, WHITE, textSur_font, backGroundCol, x, y)
+        temp_x = x + 1
+        temp_y = y
+        for data in data_list:
+            temp_x, temp_y = draw_meta_Data(data, WHITE, temp_x, temp_y + 34, BLACK, smallFont, True, x + 1, y, BLACK)
+        return temp_y + 80
 
-    current_y = temp_y + 80
+    # Draw director information
     current_x = border.x + border.width + 10
-    draw_text("Genres","#FFFFFF",current_x ,current_y,"#FFFFFF",textSur_font,backGroundCol,current_x,current_y)
+    current_y = draw_metadata("Director", film_info['director'], current_x, border.y + 4)
 
-    temp_x = current_x + 1
-    temp_y = current_y
-    for genre in film_info['genres']:
-        temp_x, temp_y = draw_text(genre,"#FFFFFF",temp_x,temp_y + 34,'#000000',smallFont,True,current_x +1,current_y,"#000000")
-        current_y = temp_y 
+    # Draw genres information
+    current_y = draw_metadata("Genres", film_info['genres'], current_x, current_y)
 
+    # Draw cast information
+    current_y = draw_metadata("Cast", film_info['actors'], current_x, current_y)
 
-    current_y = temp_y + 80
-    current_x = border.x + border.width + 10
-    draw_text("Cast","#FFFFFF",current_x ,current_y,"#FFFFFF",textSur_font,backGroundCol,current_x,current_y)
-
-    temp_x = current_x + 1
-    temp_y = current_y
-    for actor in film_info['actors']:
-        temp_x, temp_y = draw_text(actor,"#FFFFFF",temp_x,temp_y + 34,'#000000',smallFont,True,current_x +1,current_y,"#000000")
-        current_y = temp_y
-
-    current_y = temp_y + 100
-    current_x = border.x + border.width + 10
-    screen.blit(star,(current_x,current_y))
-    raiting = film_info['rating']
-    raiting_value = raiting[0]
-    raiting_count = raiting[1]
-    raiting_value = rating_font.render(str(raiting_value),True,'#FFFFFF',backGroundCol)
-    raiting_value_rect = raiting_value.get_rect()
-    raiting_value_rect.x = current_x + star.get_width() + 7
-    raiting_value_rect.y = current_y
-    screen.blit(raiting_value,raiting_value_rect)
-    temp = rating_font.render("/5",True,'#787b7f',backGroundCol)
-    temp_rect = raiting_value.get_rect()
-    temp_rect.x = raiting_value_rect.x + raiting_value_rect.width
-    temp_rect.y = current_y
-    screen.blit(temp,temp_rect)
-    raiting_count = rating_font.render(str(int(raiting_count / 1000)) + 'K',True,'#787b7f',backGroundCol)
-    raiting_count_rect = raiting_count.get_rect()
-    raiting_count_rect.x = raiting_value_rect.x 
-    raiting_count_rect.y = raiting_value_rect.y + raiting_value_rect.width - 7
-    screen.blit(raiting_count,raiting_count_rect)
+    # Draw rating information
+    current_y += 60
+    screen.blit(star, (current_x, current_y))
+    rating_value, rating_count = film_info['rating']
+    rating_value_text = rating_font.render(str(rating_value), True, WHITE, backGroundCol)
+    rating_value_rect = rating_value_text.get_rect(x=current_x + star.get_width() + 7, y=current_y)
+    screen.blit(rating_value_text, rating_value_rect)
+    rating_suffix_text = rating_font.render("/5", True, '#787b7f', backGroundCol)
+    rating_suffix_rect = rating_suffix_text.get_rect(x=rating_value_rect.x + rating_value_rect.width, y=current_y)
+    screen.blit(rating_suffix_text, rating_suffix_rect)
+    rating_count_text = rating_font.render(f"{int(rating_count / 1000)}K", True, '#787b7f', backGroundCol)
+    rating_count_rect = rating_count_text.get_rect(x=rating_value_rect.x, y=rating_value_rect.y + rating_value_rect.width - 7)
+    screen.blit(rating_count_text, rating_count_rect)
 
 
 
@@ -265,11 +251,6 @@ button1 = Button(
 )
 screen.fill(backGroundCol)
 
-def kill_thread(thread_name):
-    for thread in threading.enumerate():
-        if thread.name == thread_name:
-            thread.join()
-            break
 
 while True:
     UI_REFRESH_RATE = clock.tick(60) / 1000
@@ -290,7 +271,6 @@ while True:
                 thread.start()
             except Exception as e:
                 print(e)
-        
         manager.process_events(event)
 
     manager.update(UI_REFRESH_RATE)
